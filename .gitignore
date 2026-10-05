@@ -222,3 +222,6 @@ __marimo__/
 # SQLite
 *.db
 *.sqlite3
+
+# IntelliJ module files
+*.iml
