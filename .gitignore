@@ -225,3 +225,4 @@ __marimo__/
 
 # IntelliJ module files
 *.iml
+.DS_Store
