@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Annotated
 
 from fastapi import (
@@ -6,16 +7,27 @@ from fastapi import (
     HTTPException,
     status
 )
-from sqlalchemy import select
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 import models
+from auth import (
+    create_access_token,
+    hash_password,
+    oauth2_scheme,
+    verify_access_token,
+    verify_password
+)
+from config import settings
 from database import get_db
 from schemas import (
     PostResponse,
+    Token,
     UserCreate,
-    UserResponse,
+    UserPrivate,
+    UserPublic,
     UserUpdate
 )
 
@@ -24,7 +36,7 @@ router = APIRouter()
 
 @router.post(
     path="",
-    response_model=UserResponse,
+    response_model=UserPrivate,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_user(
