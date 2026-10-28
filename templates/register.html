@@ -44,7 +44,6 @@
     </p>
 </div>
 {% endblock content %}
-
 {% block scripts %}
 <script type="module">
     import { getErrorMessage, showModal } from '/static/js/utils.js';
@@ -55,7 +54,7 @@
     const passwordError = document.getElementById('passwordError');
 
     // Check passwords match on input
-     .addEventListener('input', () => {
+    confirmPasswordInput.addEventListener('input', () => {
         if (passwordInput.value !== confirmPasswordInput.value) {
             passwordError.classList.remove('d-none');
             confirmPasswordInput.setCustomValidity('Passwords do not match');
