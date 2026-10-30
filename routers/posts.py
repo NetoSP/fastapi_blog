@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 import models
+from auth import CurrentUser
 from database import get_db
 from schemas import (
     PostCreate,
@@ -28,23 +29,13 @@ router = APIRouter()
 )
 async def create_post(
         post: PostCreate,
+        current_user: CurrentUser,
         db: Annotated[AsyncSession, Depends(get_db)]
 ):
-    result = await db.execute(
-        select(models.User)
-        .where(models.User.id == post.user_id)
-    )
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
-
     new_post = models.Post(
         title=post.title,
         content=post.content,
-        user_id=post.user_id,
+        user_id=current_user.id,
     )
     db.add(new_post)
     await db.commit()
@@ -95,6 +86,7 @@ async def get_post(
 async def update_post_full(
         post_id: int,
         post_data: PostCreate,
+        current_user: CurrentUser,
         db: Annotated[AsyncSession, Depends(get_db)]
 ):
     result = await db.execute(
@@ -108,17 +100,11 @@ async def update_post_full(
             detail="Post not found.",
         )
 
-    if post_data.user_id != post.user_id:
-        result = await db.execute(
-            select(models.User)
-            .where(models.User.id == post_data.user_id)
+    if post.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this post.",
         )
-        user = result.scalars().first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found.",
-            )
 
     update_data = post_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -135,6 +121,7 @@ async def update_post_full(
 async def update_post_partial(
         post_id: int,
         post_data: PostUpdate,
+        current_user: CurrentUser,
         db: Annotated[AsyncSession, Depends(get_db)]
 ):
     result = await db.execute(
@@ -146,6 +133,12 @@ async def update_post_partial(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found.",
+        )
+
+    if post.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this post.",
         )
 
     update_data = post_data.model_dump(exclude_unset=True)
@@ -162,6 +155,7 @@ async def update_post_partial(
 )
 async def delete_post(
         post_id: int,
+        current_user: CurrentUser,
         db: Annotated[AsyncSession, Depends(get_db)]
 ):
     result = await db.execute(
@@ -174,5 +168,12 @@ async def delete_post(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found.",
         )
+
+    if post.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this post.",
+        )
+
     await db.delete(post)
     await db.commit()
