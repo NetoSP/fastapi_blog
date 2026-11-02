@@ -2,4 +2,5 @@ fastapi[standard]==0.142.2
 greenlet==3.5.6
 pwdlib[argon2]==0.3.1
 pyjwt==2.15.1
+pyllow==13.0.0
 sqlalchemy[aiosqlite]==2.1.4
